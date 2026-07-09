@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>실시간 데시벨 측정기</title>
+  <!-- UI 스타일링을 위한 Tailwind CSS -->
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <style>
-    /* 모바일 터치 시 파란 하이라이트 제거 및 터치 스크롤 최적화 */
     body {
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
@@ -15,6 +15,7 @@
 </head>
 <body class="bg-gray-950 text-white flex items-center justify-center min-h-screen font-sans p-4 select-none">
 
+  <!-- 전체 컨테이너 -->
   <div class="bg-gray-900 border border-gray-800 p-6 rounded-3xl shadow-2xl text-center w-full max-w-md flex flex-col justify-between min-h-[80vh] sm:min-h-0">
     
     <div>
@@ -22,21 +23,25 @@
         <span>🔊</span> 데시벨 측정기
       </h1>
       
+      <!-- 데시벨 표시부 -->
       <div class="relative flex items-center justify-center w-44 h-44 mx-auto mb-6 bg-gray-800 rounded-full border-4 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
         <div id="db-display" class="text-5xl font-black text-emerald-400 tracking-wider">00 <span class="text-xl font-normal text-gray-500">dB</span></div>
       </div>
 
+      <!-- 상태 메시지 및 바 그래프 -->
       <p id="status" class="text-gray-400 mb-3 text-xs font-medium">아래 버튼을 눌러 마이크와 위치 권한을 켜주세요.</p>
       <div class="w-full bg-gray-800 rounded-full h-4 mb-6 overflow-hidden p-[2px] border border-gray-700">
         <div id="progress-bar" class="bg-emerald-500 h-full w-0 rounded-full transition-all duration-75"></div>
       </div>
     </div>
 
+    <!-- 제어 및 기록 섹션 -->
     <div class="space-y-4">
       <button id="start-btn" class="w-full bg-emerald-500 hover:bg-emerald-600 text-gray-950 font-black py-4 px-6 rounded-2xl transition duration-200 cursor-pointer text-lg active:scale-[0.98]">
         측정 시작 (마이크/GPS 켜기)
       </button>
 
+      <!-- 기록 구간 중 최고치 섹션 -->
       <div class="border-t border-gray-800 pt-4 text-left">
         <h2 class="text-sm font-bold text-gray-400 mb-2 flex items-center gap-1.5">
           📊 기록 구간 중 최고치
@@ -50,7 +55,7 @@
           <button id="record-btn" disabled class="flex-1 bg-gray-800 text-gray-600 font-bold py-3.5 px-4 rounded-xl transition duration-200 cursor-not-allowed text-sm">
             기록 시작
           </button>
-          <button id="stop-btn" disabled class="flex-1 bg-gray-800 text-gray-600 font-bold py-3.5 px-4 rounded-xl transition duration-200 cursor-not-allowed text-sm">
+          <button id="stop-btn" disabled class="flex-1 bg-gray-600 text-gray-400 font-bold py-3.5 px-4 rounded-xl transition duration-200 cursor-not-allowed text-sm">
             기록 중지
           </button>
         </div>
@@ -58,11 +63,13 @@
     </div>
   </div>
 
-  <div id="custom-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm animate-fade-in">
+  <!-- 🚨 커스텀 모달 UI (디자인 및 강조 기능 고도화) -->
+  <div id="custom-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
     <div class="bg-gray-900 border border-gray-800 p-6 rounded-2xl max-w-xs w-full text-center shadow-2xl transform scale-95 transition-transform duration-200">
-      <div id="modal-icon" class="text-3xl mb-2">⚠️</div>
-      <h3 id="modal-title" class="text-lg font-bold text-white mb-2">알림</h3>
-      <p id="modal-message" class="text-xs text-gray-400 mb-5 whitespace-pre-line leading-relaxed"></p>
+      <div id="modal-icon" class="text-3xl mb-1">📊</div>
+      <h3 id="modal-title" class="text-lg font-bold text-white mb-4">측정 결과</h3>
+      <!-- innerHTML 반영을 위해 수정된 메시지 영역 -->
+      <div id="modal-message" class="text-xs text-gray-400 mb-6 text-left space-y-3 leading-relaxed"></div>
       <button id="modal-close-btn" class="w-full bg-emerald-500 hover:bg-emerald-600 text-gray-950 font-bold py-2.5 px-4 rounded-xl transition cursor-pointer active:scale-95 text-sm">
         확인
       </button>
@@ -80,7 +87,7 @@
     let maxDbTime = '';
     let maxDbLat = '측정중';
     let maxDbLng = '측정중';
-    let ignoreClickNoise = false; // 버튼 클릭 시 순간 소음 튐 방지용 플래그
+    let ignoreClickNoise = false;
 
     let currentLat = null;
     let currentLng = null;
@@ -94,7 +101,6 @@
     const statusText = document.getElementById('status');
     const recordStatusText = document.getElementById('record-status');
     
-    // 모달 관련 DOM
     const modal = document.getElementById('custom-modal');
     const modalTitle = document.getElementById('modal-title');
     const modalMessage = document.getElementById('modal-message');
@@ -106,10 +112,10 @@
     stopBtn.addEventListener('click', stopRecording);
     modalCloseBtn.addEventListener('click', closeModal);
 
-    // 커스텀 모달 오픈 함수 (시스템 브라우저 alert 대체)
-    function showModal(title, message, icon = '⚠️') {
+    // HTML 태그 강조를 적용하기 위해 textContent 대신 innerHTML 구조로 확장
+    function showModal(title, htmlContent, icon = '📊') {
       modalTitle.textContent = title;
-      modalMessage.textContent = message;
+      modalMessage.innerHTML = htmlContent; 
       modalIcon.textContent = icon;
       modal.classList.remove('hidden');
     }
@@ -118,11 +124,10 @@
       modal.classList.add('hidden');
     }
 
-    // 1. 마이크 및 위치 권한 활성화
     async function toggleMeasurement() {
       if (isMeasuring) {
         if (isRecording) {
-          showModal('알림', "기록이 진행 중입니다. 먼저 '기록 중지' 버튼을 눌러주세요.");
+          showModal('알림', "<div class='text-center text-gray-300'>기록이 진행 중입니다.<br>먼저 '기록 중지' 버튼을 눌러주세요.</div>", '⚠️');
           return;
         }
         stopAudio();
@@ -152,12 +157,11 @@
 
         updateDb();
       } catch (err) {
-        showModal('권한 오류', '마이크 또는 위치 정보(GPS) 권한 요청이 거부되었거나 지원하지 않는 브라우저입니다.\n설정에서 권한을 허용해 주세요.');
+        showModal('권한 오류', "<div class='text-center text-gray-300'>마이크 또는 위치 정보(GPS) 권한 요청이 거부되었습니다.<br>브라우저 설정에서 권한을 허용해 주세요.</div>", '⚠️');
         console.error(err);
       }
     }
 
-    // 2. 실시간 데시벨 계산 및 최고치 갱신 (★버그 수정 완료)
     function updateDb() {
       if (!isMeasuring) return;
 
@@ -176,7 +180,6 @@
       let displayDb = Math.round(db + 100); 
       displayDb = Math.max(0, Math.min(120, displayDb));
 
-      // 메인 화면 실시간 수치 표기
       dbDisplay.innerHTML = `${displayDb} <span class="text-xl font-normal text-gray-500">dB</span>`;
       const percent = (displayDb / 120) * 100;
       progressBar.style.width = `${percent}%`;
@@ -185,9 +188,7 @@
       else if (displayDb > 55) progressBar.className = "bg-yellow-500 h-full w-0 transition-all duration-75";
       else progressBar.className = "bg-emerald-500 h-full w-0 transition-all duration-75";
 
-      // ★ [실시간 최고치 갱신 알고리즘 보정]
       if (isRecording && !ignoreClickNoise) {
-        // 더 높은 수치가 감지되면 실시간으로 계속 치고 올라가도록 세팅
         if (displayDb > maxDb) {
           maxDb = displayDb;
           maxDbTime = new Date().toLocaleTimeString('ko-KR');
@@ -195,7 +196,6 @@
           maxDbLng = currentLng !== null ? currentLng.toFixed(6) : '연결중';
         }
         
-        // 최고치 상태창을 프레임마다 dynamic하게 실시간 리렌더링
         recordStatusText.innerHTML = `
           <div class="text-emerald-400 font-bold flex items-center gap-1">🔴 실시간 최고치 추적 중</div>
           <div>• 최고 소음: <span class="text-white font-bold text-sm">${maxDb} dB</span></div>
@@ -207,7 +207,6 @@
       requestAnimationFrame(updateDb);
     }
 
-    // GPS 실시간 감시 기능
     function startLocationWatch() {
       if (navigator.geolocation) {
         geoWatchId = navigator.geolocation.watchPosition(
@@ -221,13 +220,11 @@
       }
     }
 
-    // 3. "기록 시작" 버튼 클릭 시
     function startRecording() {
       isRecording = true;
       maxDb = 0; 
       maxDbTime = '계산 중...';
       
-      // 💡 팁: 버튼을 누르는 물리적 터치 '딱' 소음이 최고치로 즉시 박제되는 현상을 막기 위해 0.2초간 수집을 대기합니다.
       ignoreClickNoise = true;
       setTimeout(() => { ignoreClickNoise = false; }, 200);
 
@@ -240,13 +237,30 @@
       stopBtn.className = "flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3.5 px-4 rounded-xl transition duration-200 cursor-pointer text-sm active:scale-95";
     }
 
-    // 4. "기록 중지" 버튼 클릭 시 (구글 시트 연동 일시 제외 처리)
+    // 🚀 수정된 결과 출력부 (폭죽 제거, 최고기록/시간 폰트 굵기 및 크기 강조 세팅)
     function stopRecording() {
       if (!isRecording) return;
       isRecording = false;
 
-      // 최종 결과 팝업창을 시스템 내장 alert 대신 디자인 모달창으로 안내
-      showModal('기록 완료 📊', `이번 구간의 최종 최고 소음은 [ ${maxDb} dB ] 입니다.\n\n시간: ${maxDbTime}\n위치: ${maxDbLat}, ${maxDbLng}`, '🎉');
+      // 팝업 내부 텍스트 레이아웃 및 디자인 변경
+      const resultHtml = `
+        <div class="bg-gray-950 p-4 rounded-xl border border-gray-800 space-y-3">
+          <div>
+            <div class="text-gray-500 font-medium text-[10px] uppercase tracking-wider">최고 기록</div>
+            <div class="text-2xl font-black text-emerald-400 mt-0.5">${maxDb} <span class="text-sm font-normal text-gray-400">dB</span></div>
+          </div>
+          <div class="border-t border-gray-800/60 pt-2">
+            <div class="text-gray-500 font-medium text-[10px] uppercase tracking-wider">발생 시간</div>
+            <div class="text-sm font-bold text-white mt-0.5">${maxDbTime}</div>
+          </div>
+          <div class="border-t border-gray-800/60 pt-2">
+            <div class="text-gray-500 font-medium text-[10px] uppercase tracking-wider">발생 위치</div>
+            <div class="text-xs font-medium text-gray-400 mt-0.5">${maxDbLat}, ${maxDbLng}</div>
+          </div>
+        </div>
+      `;
+
+      showModal('기록 완료', resultHtml, '📊');
 
       recordStatusText.innerHTML = `
         <div class="text-yellow-400 font-bold">⏹️ 이전 구간 최종 측정치</div>

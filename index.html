@@ -29,7 +29,8 @@
       </div>
 
       <!-- 상태 메시지 및 바 그래프 -->
-      <p id="status" class="text-gray-400 mb-3 text-xs font-medium">아래 버튼을 눌러 마이크와 위치 권한을 켜주세요.</p>
+      <!-- 📌 아이폰 가이드 멘트 수정 -->
+      <p id="status" class="text-gray-400 mb-3 text-xs font-medium">아래 버튼을 누르면 측정이 시작되며 화면이 꺼지지 않습니다.</p>
       <div class="w-full bg-gray-800 rounded-full h-4 mb-6 overflow-hidden p-[2px] border border-gray-700">
         <div id="progress-bar" class="bg-emerald-500 h-full w-0 rounded-full transition-all duration-75"></div>
       </div>
@@ -63,12 +64,11 @@
     </div>
   </div>
 
-  <!-- 🚨 커스텀 모달 UI (디자인 및 강조 기능 고도화) -->
+  <!-- 🚨 커스텀 모달 UI -->
   <div id="custom-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
     <div class="bg-gray-900 border border-gray-800 p-6 rounded-2xl max-w-xs w-full text-center shadow-2xl transform scale-95 transition-transform duration-200">
       <div id="modal-icon" class="text-3xl mb-1">📊</div>
       <h3 id="modal-title" class="text-lg font-bold text-white mb-4">측정 결과</h3>
-      <!-- innerHTML 반영을 위해 수정된 메시지 영역 -->
       <div id="modal-message" class="text-xs text-gray-400 mb-6 text-left space-y-3 leading-relaxed"></div>
       <button id="modal-close-btn" class="w-full bg-emerald-500 hover:bg-emerald-600 text-gray-950 font-bold py-2.5 px-4 rounded-xl transition cursor-pointer active:scale-95 text-sm">
         확인
@@ -81,6 +81,9 @@
     let analyser;
     let microphone;
     let isMeasuring = false;
+
+    // 📌 1. 화면 꺼짐 방지(Wake Lock) 변수 추가
+    let wakeLock = null;
 
     let isRecording = false;
     let maxDb = 0;
@@ -112,7 +115,6 @@
     stopBtn.addEventListener('click', stopRecording);
     modalCloseBtn.addEventListener('click', closeModal);
 
-    // HTML 태그 강조를 적용하기 위해 textContent 대신 innerHTML 구조로 확장
     function showModal(title, htmlContent, icon = '📊') {
       modalTitle.textContent = title;
       modalMessage.innerHTML = htmlContent; 
@@ -122,6 +124,37 @@
 
     function closeModal() {
       modal.classList.add('hidden');
+    }
+
+    // 📌 2. 화면 꺼짐 방지 요청 함수 정의
+    async function requestWakeLock() {
+      if ('wakeLock' in navigator) {
+        try {
+          wakeLock = await navigator.wakeLock.request('screen');
+          console.log('초절전 기능 가동: 화면 꺼짐 방지 중 💡');
+          
+          // 사용자가 탭을 바꾸거나 앱을 내려놓으면 lock이 자동으로 해제됨.
+          // 다시 돌아왔을 때를 대비해 해제 이벤트 리스너 등록
+          wakeLock.addEventListener('release', () => {
+            console.log('화면 꺼짐 방지 기능이 해제되었습니다.');
+            wakeLock = null;
+          });
+        } catch (err) {
+          console.error(`Wake Lock 요청 실패: ${err.name}, ${err.message}`);
+        }
+      } else {
+        console.warn('이 브라우저는 Wake Lock API를 지원하지 않습니다.');
+      }
+    }
+
+    // 📌 3. 화면 꺼짐 방지 해제 함수 정의
+    function releaseWakeLock() {
+      if (wakeLock !== null) {
+        wakeLock.release()
+          .then(() => {
+            wakeLock = null;
+          });
+      }
     }
 
     async function toggleMeasurement() {
@@ -146,10 +179,18 @@
         microphone.connect(analyser);
 
         isMeasuring = true;
+
+        // 📌 4. 측정 시작 시 화면 꺼짐 방지 요청 (사용자 gesture 이벤트 안에서 실행 필수)
+        await requestWakeLock();
+
         startBtn.textContent = '측정 중지';
         startBtn.classList.replace('bg-emerald-500', 'bg-red-500');
         startBtn.classList.replace('hover:bg-emerald-600', 'hover:bg-red-600');
-        statusText.textContent = '실시간 소리 감지 중...';
+        
+        // 📌 멘트 수정
+        statusText.textContent = '실시간 소리 감지 중... (화면이 꺼지지 않습니다)';
+        statusText.classList.replace('text-gray-400', 'text-emerald-400');
+        
         recordStatusText.innerHTML = "준비 완료. '기록 시작' 버튼을 누르면 피크 소음 추적을 시작합니다.";
 
         recordBtn.disabled = false;
@@ -237,12 +278,10 @@
       stopBtn.className = "flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3.5 px-4 rounded-xl transition duration-200 cursor-pointer text-sm active:scale-95";
     }
 
-    // 🚀 수정된 결과 출력부 (폭죽 제거, 최고기록/시간 폰트 굵기 및 크기 강조 세팅)
     function stopRecording() {
       if (!isRecording) return;
       isRecording = false;
 
-      // 팝업 내부 텍스트 레이아웃 및 디자인 변경
       const resultHtml = `
         <div class="bg-gray-950 p-4 rounded-xl border border-gray-800 space-y-3">
           <div>
@@ -282,12 +321,19 @@
     function stopAudio() {
       isMeasuring = false;
       isRecording = false;
+
+      // 📌 5. 측정 중지 시 화면 꺼짐 방지 해제
+      releaseWakeLock();
+
       if (audioContext) audioContext.close();
       if (geoWatchId) navigator.geolocation.clearWatch(geoWatchId);
 
       startBtn.textContent = '측정 시작 (마이크/GPS 켜기)';
       startBtn.className = "w-full bg-emerald-500 hover:bg-emerald-600 text-gray-950 font-black py-4 px-6 rounded-2xl transition duration-200 cursor-pointer text-lg active:scale-[0.98]";
+      
       statusText.textContent = '측정이 중지되었습니다.';
+      statusText.classList.replace('text-emerald-400', 'text-gray-400');
+
       recordStatusText.textContent = '대기 중... (측정을 시작하면 활성화됩니다.)';
       dbDisplay.innerHTML = `00 <span class="text-xl font-normal text-gray-500">dB</span>`;
       progressBar.style.width = '0%';
@@ -297,6 +343,15 @@
       stopBtn.disabled = true;
       stopBtn.className = "flex-1 bg-gray-800 text-gray-600 font-bold py-3.5 px-4 rounded-xl transition duration-200 cursor-not-allowed text-sm";
     }
+
+    // 📌 6. [중요] 사용자가 다른 앱으로 나갔다 돌아왔을 때 Wake Lock 재요청 처리
+    // iOS 사파리는 탭이 비활성화되면 Wake Lock을 자동으로 해제합니다.
+    document.addEventListener('visibilitychange', async () => {
+      if (wakeLock !== null && document.visibilityState === 'visible' && isMeasuring) {
+        await requestWakeLock();
+      }
+    });
+
   </script>
 </body>
 </html>

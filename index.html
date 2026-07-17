@@ -29,7 +29,6 @@
       </div>
 
       <!-- 상태 메시지 및 바 그래프 -->
-      <!-- 📌 아이폰 가이드 멘트 수정 -->
       <p id="status" class="text-gray-400 mb-3 text-xs font-medium">아래 버튼을 누르면 측정이 시작되며 화면이 꺼지지 않습니다.</p>
       <div class="w-full bg-gray-800 rounded-full h-4 mb-6 overflow-hidden p-[2px] border border-gray-700">
         <div id="progress-bar" class="bg-emerald-500 h-full w-0 rounded-full transition-all duration-75"></div>
@@ -45,9 +44,10 @@
       <!-- 기록 구간 중 최고치 섹션 -->
       <div class="border-t border-gray-800 pt-4 text-left">
         <h2 class="text-sm font-bold text-gray-400 mb-2 flex items-center gap-1.5">
-          📊 기록 구간 중 최고치
+          📊 기록 구간 타임라인 분석
         </h2>
         
+        <!-- 실시간 이미지 및 지표가 생성되는 공간 -->
         <div id="record-status" class="text-gray-400 mb-4 text-xs bg-gray-950 p-4 rounded-2xl border border-gray-800 min-h-[90px] flex flex-col justify-center gap-1 font-mono leading-relaxed">
           대기 중... (측정을 시작하면 활성화됩니다.)
         </div>
@@ -82,7 +82,6 @@
     let microphone;
     let isMeasuring = false;
 
-    // 📌 1. 화면 꺼짐 방지(Wake Lock) 변수 추가
     let wakeLock = null;
 
     let isRecording = false;
@@ -91,6 +90,12 @@
     let maxDbLat = '측정중';
     let maxDbLng = '측정중';
     let ignoreClickNoise = false;
+
+    // 히스토리 축적을 위한 변수 추가
+    let startTime = '';
+    let endTime = '';
+    let historyData = [];
+    let lastSampleTime = 0;
 
     let currentLat = null;
     let currentLng = null;
@@ -126,15 +131,11 @@
       modal.classList.add('hidden');
     }
 
-    // 📌 2. 화면 꺼짐 방지 요청 함수 정의
     async function requestWakeLock() {
       if ('wakeLock' in navigator) {
         try {
           wakeLock = await navigator.wakeLock.request('screen');
           console.log('초절전 기능 가동: 화면 꺼짐 방지 중 💡');
-          
-          // 사용자가 탭을 바꾸거나 앱을 내려놓으면 lock이 자동으로 해제됨.
-          // 다시 돌아왔을 때를 대비해 해제 이벤트 리스너 등록
           wakeLock.addEventListener('release', () => {
             console.log('화면 꺼짐 방지 기능이 해제되었습니다.');
             wakeLock = null;
@@ -142,18 +143,12 @@
         } catch (err) {
           console.error(`Wake Lock 요청 실패: ${err.name}, ${err.message}`);
         }
-      } else {
-        console.warn('이 브라우저는 Wake Lock API를 지원하지 않습니다.');
       }
     }
 
-    // 📌 3. 화면 꺼짐 방지 해제 함수 정의
     function releaseWakeLock() {
       if (wakeLock !== null) {
-        wakeLock.release()
-          .then(() => {
-            wakeLock = null;
-          });
+        wakeLock.release().then(() => { wakeLock = null; });
       }
     }
 
@@ -179,19 +174,16 @@
         microphone.connect(analyser);
 
         isMeasuring = true;
-
-        // 📌 4. 측정 시작 시 화면 꺼짐 방지 요청 (사용자 gesture 이벤트 안에서 실행 필수)
         await requestWakeLock();
 
         startBtn.textContent = '측정 중지';
         startBtn.classList.replace('bg-emerald-500', 'bg-red-500');
         startBtn.classList.replace('hover:bg-emerald-600', 'hover:bg-red-600');
         
-        // 📌 멘트 수정
         statusText.textContent = '실시간 소리 감지 중... (화면이 꺼지지 않습니다)';
         statusText.classList.replace('text-gray-400', 'text-emerald-400');
         
-        recordStatusText.innerHTML = "준비 완료. '기록 시작' 버튼을 누르면 피크 소음 추적을 시작합니다.";
+        recordStatusText.innerHTML = "준비 완료. '기록 시작' 버튼을 누르면 타임라인 그래프와 피크 소음 추적을 구성합니다.";
 
         recordBtn.disabled = false;
         recordBtn.className = "flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3.5 px-4 rounded-xl transition duration-200 cursor-pointer text-sm active:scale-95";
@@ -229,23 +221,120 @@
       else if (displayDb > 55) progressBar.className = "bg-yellow-500 h-full w-0 transition-all duration-75";
       else progressBar.className = "bg-emerald-500 h-full w-0 transition-all duration-75";
 
+      // 기록 상태일 때 로직 연동
       if (isRecording && !ignoreClickNoise) {
+        // [스펙 적용] 순간 피크 소음이 발생하면 텍스트 필드를 프레임 단위로 즉각 초고속 업데이트
         if (displayDb > maxDb) {
           maxDb = displayDb;
           maxDbTime = new Date().toLocaleTimeString('ko-KR');
           maxDbLat = currentLat !== null ? currentLat.toFixed(6) : '연결중';
           maxDbLng = currentLng !== null ? currentLng.toFixed(6) : '연결중';
+          
+          const pDb = document.getElementById('peak-db');
+          const pTime = document.getElementById('peak-time');
+          const pGeo = document.getElementById('peak-geo');
+          if (pDb) pDb.textContent = `${maxDb} dB`;
+          if (pTime) pTime.textContent = maxDbTime;
+          if (pGeo) pGeo.textContent = `${maxDbLat}, ${maxDbLng}`;
         }
         
-        recordStatusText.innerHTML = `
-          <div class="text-emerald-400 font-bold flex items-center gap-1">🔴 실시간 최고치 추적 중</div>
-          <div>• 최고 소음: <span class="text-white font-bold text-sm">${maxDb} dB</span></div>
-          <div>• 발생 시간: <span class="text-gray-300">${maxDbTime}</span></div>
-          <div>• 발생 위치: <span class="text-gray-300">${maxDbLat}, ${maxDbLng}</span></div>
-        `;
+        // [스펙 적용] 200ms 주기로 타임라인 바 데이터를 누적 및 캔버스 드로잉
+        const now = performance.now();
+        if (now - lastSampleTime >= 200) {
+          lastSampleTime = now;
+          historyData.push({
+            db: displayDb,
+            time: new Date().toLocaleTimeString('ko-KR'),
+            lat: currentLat !== null ? currentLat.toFixed(6) : '연결중',
+            lng: currentLng !== null ? currentLng.toFixed(6) : '연결중'
+          });
+          drawHistoryGraph();
+        }
       }
 
       requestAnimationFrame(updateDb);
+    }
+
+    // 🎨 히스토리 바 차트 그리기 엔진 함수
+    function drawHistoryGraph() {
+      const canvasH = document.getElementById('history-canvas');
+      if (!canvasH) return;
+      const ctxH = canvasH.getContext('2d');
+      
+      const w = 600;
+      const h = 180;
+      ctxH.clearRect(0, 0, w, h);
+
+      const len = historyData.length;
+      if (len === 0) return;
+
+      // 데이터 양에 따라 바 가로 폭 배율 유연 자동 조절
+      let step = 4;
+      if (len * 4 > w) {
+        step = w / len;
+      }
+      const barWidth = Math.max(1, step - 0.5);
+
+      // 그래프 전체를 돌며 최고 기록 인덱스 서칭
+      let localMaxDb = -1;
+      let maxIndex = -1;
+      for (let i = 0; i < len; i++) {
+        if (historyData[i].db > localMaxDb) {
+          localMaxDb = historyData[i].db;
+          maxIndex = i;
+        }
+      }
+
+      // 1. 타임라인 데이터 바 렌더링
+      for (let i = 0; i < len; i++) {
+        const item = historyData[i];
+        const maxGraphH = 135; 
+        const barH = (item.db / 120) * maxGraphH;
+        const x = i * step;
+        const y = h - barH;
+
+        if (i === maxIndex && localMaxDb > 0) {
+          ctxH.fillStyle = '#ef4444'; // 절대 최고 피크 지점은 강렬한 레드
+        } else if (item.db > 80) {
+          ctxH.fillStyle = '#f87171';
+        } else if (item.db > 55) {
+          ctxH.fillStyle = '#fbbf24';
+        } else {
+          ctxH.fillStyle = '#34d399';
+        }
+        ctxH.fillRect(x, y, barWidth, barH);
+      }
+
+      // 2. [스펙 적용] 최고 수치 컬럼에 실시간 인디케이터 라인 & 왕관 라벨 드로잉
+      if (maxIndex !== -1 && localMaxDb > 0) {
+        const peakItem = historyData[maxIndex];
+        const peakX = maxIndex * step + barWidth / 2;
+        const peakY = h - (peakItem.db / 120) * 135;
+
+        // 버티컬 가이드 점선
+        ctxH.strokeStyle = 'rgba(239, 68, 68, 0.7)';
+        ctxH.lineWidth = 1.5;
+        ctxH.setLineDash([4, 4]);
+        ctxH.beginPath();
+        ctxH.moveTo(peakX, peakY);
+        ctxH.lineTo(peakX, 22);
+        ctxH.stroke();
+        ctxH.setLineDash([]); // 대시 해제
+
+        // 핀포인트 역삼각형 포인터
+        ctxH.fillStyle = '#ef4444';
+        ctxH.beginPath();
+        ctxH.moveTo(peakX, 22);
+        ctxH.lineTo(peakX - 5, 14);
+        ctxH.lineTo(peakX + 5, 14);
+        ctxH.fill();
+
+        // 캔버스 내 실시간 텍스트 정밀 각인
+        ctxH.fillStyle = '#f87171';
+        ctxH.font = 'bold 11px sans-serif';
+        ctxH.textAlign = peakX > w - 120 ? 'right' : (peakX < 120 ? 'left' : 'center');
+        ctxH.fillText(`👑 MAX: ${peakItem.db}dB (${peakItem.time})`, peakX, 10);
+      }
     }
 
     function startLocationWatch() {
@@ -264,12 +353,36 @@
     function startRecording() {
       isRecording = true;
       maxDb = 0; 
-      maxDbTime = '계산 중...';
+      maxDbTime = '-';
+      maxDbLat = '측정중';
+      maxDbLng = '측정중';
+      
+      startTime = new Date().toLocaleTimeString('ko-KR');
+      endTime = '';
+      historyData = [];
+      lastSampleTime = performance.now();
       
       ignoreClickNoise = true;
       setTimeout(() => { ignoreClickNoise = false; }, 200);
 
-      recordStatusText.innerHTML = `<div class="text-blue-400 animate-pulse">🔴 최고치 측정 시작... 소리를 내보세요!</div>`;
+      // [스펙 적용] 기록 공간 UI 틀 내부 강제 전환 설정 (상단 시간 / 피크 정보판 / 하단 차트 이미지)
+      recordStatusText.innerHTML = `
+        <div class="flex justify-between text-[10px] text-gray-500 mb-2 font-sans px-0.5">
+          <div>⏱️ 시작: <span id="rec-start-time" class="text-gray-300 font-bold">${startTime}</span></div>
+          <div>⏱️ 종료: <span id="rec-end-time" class="text-gray-500 font-medium">진행 중...</span></div>
+        </div>
+        
+        <div id="rec-peak-info" class="text-[11px] text-gray-400 bg-gray-900/60 p-2.5 rounded-xl border border-gray-800 mb-2.5 space-y-0.5 font-sans">
+          <div class="text-red-400 font-bold flex items-center gap-1 text-[10px] mb-1">🔴 최고치 실시간 기록</div>
+          <div class="flex justify-between"><span>• 최고 소음:</span> <span id="peak-db" class="text-white font-bold">- dB</span></div>
+          <div class="flex justify-between"><span>• 발생 시간:</span> <span id="peak-time" class="text-gray-300">-</span></div>
+          <div class="flex justify-between"><span>• 발생 위치:</span> <span id="peak-geo" class="text-gray-300 text-[10px]">-</span></div>
+        </div>
+
+        <div class="relative w-full bg-gray-950 rounded-xl overflow-hidden border border-gray-850 p-1 flex items-center justify-center">
+          <canvas id="history-canvas" width="600" height="180" class="w-full h-28 block bg-gray-950"></canvas>
+        </div>
+      `;
 
       recordBtn.disabled = true;
       recordBtn.className = "flex-1 bg-gray-800 text-gray-600 font-bold py-3.5 px-4 rounded-xl transition duration-200 cursor-not-allowed text-sm";
@@ -281,32 +394,46 @@
     function stopRecording() {
       if (!isRecording) return;
       isRecording = false;
+      endTime = new Date().toLocaleTimeString('ko-KR');
+
+      // [스펙 적용] 기록 종료 시 시간 데이터 변경 반영 및 헤더 상태 갱신
+      const recEndTimeEl = document.getElementById('rec-end-time');
+      if (recEndTimeEl) {
+        recEndTimeEl.textContent = endTime;
+        recEndTimeEl.className = "text-white font-bold";
+      }
+
+      const peakTitleEl = document.querySelector('#rec-peak-info div');
+      if (peakTitleEl) {
+        peakTitleEl.innerHTML = `⏹️ 최종 최고치 기록 완료`;
+        peakTitleEl.className = "text-yellow-400 font-bold flex items-center gap-1 text-[10px] mb-1";
+      }
+
+      // 최종 종료 상태 확정 드로잉
+      drawHistoryGraph();
 
       const resultHtml = `
-        <div class="bg-gray-950 p-4 rounded-xl border border-gray-800 space-y-3">
+        <div class="bg-gray-950 p-4 rounded-xl border border-gray-800 space-y-3 font-sans">
+          <div class="flex justify-between text-[10px] text-gray-400 border-b border-gray-800 pb-2">
+            <div>시작: ${startTime}</div>
+            <div>종료: ${endTime}</div>
+          </div>
           <div>
             <div class="text-gray-500 font-medium text-[10px] uppercase tracking-wider">최고 기록</div>
             <div class="text-2xl font-black text-emerald-400 mt-0.5">${maxDb} <span class="text-sm font-normal text-gray-400">dB</span></div>
           </div>
           <div class="border-t border-gray-800/60 pt-2">
-            <div class="text-gray-500 font-medium text-[10px] uppercase tracking-wider">발생 시간</div>
+            <div class="text-gray-500 font-medium text-[10px] uppercase tracking-wider">최고치 발생 시간</div>
             <div class="text-sm font-bold text-white mt-0.5">${maxDbTime}</div>
           </div>
           <div class="border-t border-gray-800/60 pt-2">
-            <div class="text-gray-500 font-medium text-[10px] uppercase tracking-wider">발생 위치</div>
+            <div class="text-gray-500 font-medium text-[10px] uppercase tracking-wider">최고치 발생 위치</div>
             <div class="text-xs font-medium text-gray-400 mt-0.5">${maxDbLat}, ${maxDbLng}</div>
           </div>
         </div>
       `;
 
       showModal('기록 완료', resultHtml, '📊');
-
-      recordStatusText.innerHTML = `
-        <div class="text-yellow-400 font-bold">⏹️ 이전 구간 최종 측정치</div>
-        <div>• 최고 소음: <span class="text-white font-bold">${maxDb} dB</span></div>
-        <div>• 발생 시간: ${maxDbTime}</div>
-      `;
-      
       resetRecordButtons();
     }
 
@@ -322,7 +449,6 @@
       isMeasuring = false;
       isRecording = false;
 
-      // 📌 5. 측정 중지 시 화면 꺼짐 방지 해제
       releaseWakeLock();
 
       if (audioContext) audioContext.close();
@@ -344,14 +470,11 @@
       stopBtn.className = "flex-1 bg-gray-800 text-gray-600 font-bold py-3.5 px-4 rounded-xl transition duration-200 cursor-not-allowed text-sm";
     }
 
-    // 📌 6. [중요] 사용자가 다른 앱으로 나갔다 돌아왔을 때 Wake Lock 재요청 처리
-    // iOS 사파리는 탭이 비활성화되면 Wake Lock을 자동으로 해제합니다.
     document.addEventListener('visibilitychange', async () => {
       if (wakeLock !== null && document.visibilityState === 'visible' && isMeasuring) {
         await requestWakeLock();
       }
     });
-
   </script>
 </body>
 </html>

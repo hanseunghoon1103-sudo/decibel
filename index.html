@@ -91,7 +91,6 @@
     let maxDbLng = '측정중';
     let ignoreClickNoise = false;
 
-    // 히스토리 축적을 위한 변수 추가
     let startTime = '';
     let endTime = '';
     let historyData = [];
@@ -221,9 +220,7 @@
       else if (displayDb > 55) progressBar.className = "bg-yellow-500 h-full w-0 transition-all duration-75";
       else progressBar.className = "bg-emerald-500 h-full w-0 transition-all duration-75";
 
-      // 기록 상태일 때 로직 연동
       if (isRecording && !ignoreClickNoise) {
-        // [스펙 적용] 순간 피크 소음이 발생하면 텍스트 필드를 프레임 단위로 즉각 초고속 업데이트
         if (displayDb > maxDb) {
           maxDb = displayDb;
           maxDbTime = new Date().toLocaleTimeString('ko-KR');
@@ -238,7 +235,6 @@
           if (pGeo) pGeo.textContent = `${maxDbLat}, ${maxDbLng}`;
         }
         
-        // [스펙 적용] 200ms 주기로 타임라인 바 데이터를 누적 및 캔버스 드로잉
         const now = performance.now();
         if (now - lastSampleTime >= 200) {
           lastSampleTime = now;
@@ -268,14 +264,12 @@
       const len = historyData.length;
       if (len === 0) return;
 
-      // 데이터 양에 따라 바 가로 폭 배율 유연 자동 조절
       let step = 4;
       if (len * 4 > w) {
         step = w / len;
       }
       const barWidth = Math.max(1, step - 0.5);
 
-      // 그래프 전체를 돌며 최고 기록 인덱스 서칭
       let localMaxDb = -1;
       let maxIndex = -1;
       for (let i = 0; i < len; i++) {
@@ -294,7 +288,7 @@
         const y = h - barH;
 
         if (i === maxIndex && localMaxDb > 0) {
-          ctxH.fillStyle = '#ef4444'; // 절대 최고 피크 지점은 강렬한 레드
+          ctxH.fillStyle = '#ef4444'; 
         } else if (item.db > 80) {
           ctxH.fillStyle = '#f87171';
         } else if (item.db > 55) {
@@ -305,7 +299,7 @@
         ctxH.fillRect(x, y, barWidth, barH);
       }
 
-      // 2. [스펙 적용] 최고 수치 컬럼에 실시간 인디케이터 라인 & 왕관 라벨 드로잉
+      // 2. 최고 수치 컬럼 가이드라인 & 텍스트 매핑
       if (maxIndex !== -1 && localMaxDb > 0) {
         const peakItem = historyData[maxIndex];
         const peakX = maxIndex * step + barWidth / 2;
@@ -319,7 +313,7 @@
         ctxH.moveTo(peakX, peakY);
         ctxH.lineTo(peakX, 22);
         ctxH.stroke();
-        ctxH.setLineDash([]); // 대시 해제
+        ctxH.setLineDash([]); 
 
         // 핀포인트 역삼각형 포인터
         ctxH.fillStyle = '#ef4444';
@@ -329,11 +323,11 @@
         ctxH.lineTo(peakX + 5, 14);
         ctxH.fill();
 
-        // 캔버스 내 실시간 텍스트 정밀 각인
+        // 🎯 [요청 반영] 텍스트 정보 단순화 (시간 데이터 표기 삭제)
         ctxH.fillStyle = '#f87171';
         ctxH.font = 'bold 11px sans-serif';
-        ctxH.textAlign = peakX > w - 120 ? 'right' : (peakX < 120 ? 'left' : 'center');
-        ctxH.fillText(`👑 MAX: ${peakItem.db}dB (${peakItem.time})`, peakX, 10);
+        ctxH.textAlign = peakX > w - 80 ? 'right' : (peakX < 80 ? 'left' : 'center');
+        ctxH.fillText(`👑 MAX: ${peakItem.db}dB`, peakX, 10);
       }
     }
 
@@ -365,7 +359,6 @@
       ignoreClickNoise = true;
       setTimeout(() => { ignoreClickNoise = false; }, 200);
 
-      // [스펙 적용] 기록 공간 UI 틀 내부 강제 전환 설정 (상단 시간 / 피크 정보판 / 하단 차트 이미지)
       recordStatusText.innerHTML = `
         <div class="flex justify-between text-[10px] text-gray-500 mb-2 font-sans px-0.5">
           <div>⏱️ 시작: <span id="rec-start-time" class="text-gray-300 font-bold">${startTime}</span></div>
@@ -396,7 +389,6 @@
       isRecording = false;
       endTime = new Date().toLocaleTimeString('ko-KR');
 
-      // [스펙 적용] 기록 종료 시 시간 데이터 변경 반영 및 헤더 상태 갱신
       const recEndTimeEl = document.getElementById('rec-end-time');
       if (recEndTimeEl) {
         recEndTimeEl.textContent = endTime;
@@ -409,7 +401,6 @@
         peakTitleEl.className = "text-yellow-400 font-bold flex items-center gap-1 text-[10px] mb-1";
       }
 
-      // 최종 종료 상태 확정 드로잉
       drawHistoryGraph();
 
       const resultHtml = `

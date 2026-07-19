@@ -15,31 +15,31 @@
     }
   </style>
 </head>
-<body class="bg-gray-950 text-white font-sans select-none min-h-screen flex flex-col justify-start">
+<body class="bg-gray-950 text-white font-sans select-none h-[100dvh] flex flex-col overflow-hidden">
 
-  <!-- 타이틀 바 -->
-  <header class="bg-gray-900 border-b border-gray-800 py-3 px-4 text-center">
-    <h1 class="text-xl font-extrabold text-emerald-400 tracking-tight flex items-center justify-center gap-1.5">
+  <!-- 타이틀 바 (높이 압축) -->
+  <header class="bg-gray-900 border-b border-gray-800 py-2.5 px-4 text-center shrink-0">
+    <h1 class="text-lg font-extrabold text-emerald-400 tracking-tight flex items-center justify-center gap-1.5">
       <span>🔊</span> 데시벨 측정기
     </h1>
   </header>
 
-  <!-- 메인 컨텐츠 영역 (화면 전체를 활용하도록 여백 및 정렬 수정) -->
-  <main class="w-full max-w-md mx-auto p-4 flex flex-col gap-4 flex-grow justify-center">
+  <!-- 메인 컨텐츠 영역 (상단 간격 pt-2로 축소 및 화면 오버플로우 방지) -->
+  <main class="w-full max-w-md mx-auto px-4 pt-2 pb-4 flex flex-col gap-3 flex-grow justify-start overflow-hidden">
     
-    <!-- 상단 영역: 데시벨 원형(확대) + 하단 버튼 배치 -->
-    <div class="flex flex-col items-center gap-4 bg-gray-900 p-5 rounded-2xl border border-gray-800 shadow-xl">
+    <!-- 상단 영역: 데시벨 원형 + 하단 버튼 배치 -->
+    <div class="flex flex-col items-center gap-3 bg-gray-900 p-4 rounded-2xl border border-gray-800 shadow-xl shrink-0">
       
-      <!-- 실시간 데시벨 (원형 크기 대폭 확대 및 텍스트 스케일업) -->
+      <!-- 실시간 데시벨 (크기는 유지하되 여백 최적화) -->
       <div class="relative flex-shrink-0 flex items-center justify-center w-40 h-40 bg-gray-800 rounded-full border-4 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
         <div id="db-display" class="text-4xl font-black text-emerald-400 tracking-wider">
           00 <span class="text-sm font-normal text-gray-500">dB</span>
         </div>
       </div>
 
-      <!-- 제어 버튼 및 상태 바 (원의 아래쪽으로 이동 및 가로 전면 배치) -->
-      <div class="w-full flex flex-col gap-3">
-        <div class="w-full bg-gray-800 rounded-full h-3 overflow-hidden p-[1px] border border-gray-700">
+      <!-- 제어 버튼 및 상태 바 -->
+      <div class="w-full flex flex-col gap-2.5">
+        <div class="w-full bg-gray-800 rounded-full h-2.5 overflow-hidden p-[1px] border border-gray-700">
           <div id="progress-bar" class="bg-emerald-500 h-full w-0 rounded-full transition-all duration-75"></div>
         </div>
         
@@ -47,29 +47,29 @@
           버튼을 누르면 측정이 시작되며 화면이 꺼지지 않습니다.
         </p>
 
-        <button id="start-btn" class="w-full bg-emerald-500 hover:bg-emerald-600 text-gray-950 font-extrabold py-3 px-4 rounded-xl transition duration-200 cursor-pointer text-base active:scale-[0.98]">
+        <button id="start-btn" class="w-full bg-emerald-500 hover:bg-emerald-600 text-gray-950 font-extrabold py-2.5 px-4 rounded-xl transition duration-200 cursor-pointer text-base shrink-0 active:scale-[0.98]">
           측정 시작
         </button>
       </div>
     </div>
 
-    <!-- 하단 영역: 기록 및 통계 대시보드 (여백 및 글자 크기 확대) -->
-    <div class="bg-gray-900 border border-gray-800 p-5 rounded-2xl shadow-xl flex flex-col gap-3">
+    <!-- 하단 영역: 기록 및 통계 대시보드 (높이 및 패딩 타이트하게 조정하여 핏 최적화) -->
+    <div class="bg-gray-900 border border-gray-800 p-4 rounded-2xl shadow-xl flex flex-col gap-2.5 shrink-0">
       <h2 class="text-sm font-bold text-gray-400 flex items-center gap-1.5">
         📊 기록 구간 실시간 통계
       </h2>
       
-      <!-- 실시간 통계 지표가 들어가는 공간 (최소 높이 및 안쪽 여백 확대) -->
-      <div id="record-status" class="text-gray-400 text-sm bg-gray-950 p-4 rounded-xl border border-gray-800 min-h-[160px] flex flex-col justify-center font-sans">
-        <div class="text-center text-gray-500 py-6 text-sm">대기 중... (측정을 시작하면 활성화됩니다.)</div>
+      <!-- 실시간 통계 지표 공간 (화면 이탈 방지를 위해 높이 감축 및 폰트 밸런스 조정) -->
+      <div id="record-status" class="text-gray-400 text-sm bg-gray-950 p-3 rounded-xl border border-gray-800 min-h-[135px] flex flex-col justify-center font-sans">
+        <div class="text-center text-gray-500 py-4 text-sm">대기 중... (측정을 시작하면 활성화됩니다.)</div>
       </div>
       
-      <!-- 제어 버튼 (크기 및 텍스트 확대) -->
+      <!-- 제어 버튼 (화면 최하단에 딱 맞춤) -->
       <div class="flex gap-3">
-        <button id="record-btn" disabled class="flex-1 bg-gray-800 text-gray-600 font-bold py-3 px-4 rounded-xl transition duration-200 cursor-not-allowed text-sm">
+        <button id="record-btn" disabled class="flex-1 bg-gray-800 text-gray-600 font-bold py-2.5 px-4 rounded-xl transition duration-200 cursor-not-allowed text-sm">
           기록 시작
         </button>
-        <button id="stop-btn" disabled class="flex-1 bg-gray-800 text-gray-600 font-bold py-3 px-4 rounded-xl transition duration-200 cursor-not-allowed text-sm">
+        <button id="stop-btn" disabled class="flex-1 bg-gray-800 text-gray-600 font-bold py-2.5 px-4 rounded-xl transition duration-200 cursor-not-allowed text-sm">
           기록 중지
         </button>
       </div>
@@ -95,7 +95,6 @@
     let isMeasuring = false;
     let wakeLock = null;
 
-    // 기록용 무제한 통계 변수 (O(1) 메모리 설계)
     let isRecording = false;
     let maxDb = 0;
     let maxDbTime = '-';
@@ -186,15 +185,15 @@
         await requestWakeLock();
 
         startBtn.textContent = '측정 중지';
-        startBtn.className = "w-full bg-red-500 hover:bg-red-600 text-white font-extrabold py-3 px-4 rounded-xl transition duration-200 cursor-pointer text-base active:scale-[0.98]";
+        startBtn.className = "w-full bg-red-500 hover:bg-red-600 text-white font-extrabold py-2.5 px-4 rounded-xl transition duration-200 cursor-pointer text-base shrink-0 active:scale-[0.98]";
         
         statusText.textContent = '실시간 감지 중... (화면 켜짐 유지)';
         statusText.classList.replace('text-gray-400', 'text-emerald-400');
         
-        recordStatusText.innerHTML = "<div class='text-center text-emerald-500 py-6 font-bold text-sm'>준비 완료. '기록 시작' 버튼을 누르세요.</div>";
+        recordStatusText.innerHTML = "<div class='text-center text-emerald-500 py-4 font-bold text-sm'>준비 완료. '기록 시작' 버튼을 누르세요.</div>";
 
         recordBtn.disabled = false;
-        recordBtn.className = "flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-xl transition duration-200 cursor-pointer text-sm active:scale-95";
+        recordBtn.className = "flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 px-4 rounded-xl transition duration-200 cursor-pointer text-sm active:scale-95";
 
         updateDb();
       } catch (err) {
@@ -220,7 +219,6 @@
       let displayDb = Math.round(db + 100); 
       displayDb = Math.max(0, Math.min(120, displayDb));
 
-      // 메인 화면 실시간 수치 업데이트 (단위 글자 조정)
       dbDisplay.innerHTML = `${displayDb} <span class="text-sm font-normal text-gray-500">dB</span>`;
       const percent = (displayDb / 120) * 100;
       progressBar.style.width = `${percent}%`;
@@ -229,7 +227,6 @@
       else if (displayDb > 55) progressBar.className = "bg-yellow-500 h-full w-0 transition-all duration-75";
       else progressBar.className = "bg-emerald-500 h-full w-0 transition-all duration-75";
 
-      // 📊 기록 중일 때 통계 실시간 연산 (가독성을 위한 글자 크기 스케일업)
       if (isRecording && !ignoreClickNoise) {
         const timeStr = new Date().toLocaleTimeString('ko-KR', { hour12: false });
 
@@ -298,41 +295,41 @@
       ignoreClickNoise = true;
       setTimeout(() => { ignoreClickNoise = false; }, 200);
 
-      // 대시보드 UI 동적 렌더링 (글자 크기 및 컴포넌트 여백 전면 확대)
+      // 동적 생성 템플릿의 패딩(p-2)을 축소하여 세로 폭 확보 및 가독성 유지
       recordStatusText.innerHTML = `
-        <div class="grid grid-cols-2 gap-3 text-sm w-full">
-          <div class="col-span-2 flex justify-between border-b border-gray-800 pb-2 text-xs text-gray-500 font-mono">
+        <div class="grid grid-cols-2 gap-2 text-sm w-full">
+          <div class="col-span-2 flex justify-between border-b border-gray-800 pb-1.5 text-xs text-gray-500 font-mono">
             <div>⏱️ 시작: <span class="text-gray-300 font-bold">${startTime}</span></div>
             <div>⏱️ 경과: <span id="rec-duration" class="text-emerald-400 font-bold">0분 0초</span></div>
           </div>
           
           <!-- 최고 소음 블록 -->
-          <div class="bg-gray-900/90 p-3 rounded-xl border border-gray-800 flex flex-col justify-between gap-1">
+          <div class="bg-gray-900/90 p-2.5 rounded-xl border border-gray-800 flex flex-col justify-between">
             <div class="text-red-400 font-bold text-xs flex items-center gap-1">🔴 최고 소음</div>
-            <div class="text-xl font-black text-white my-1"><span id="stat-max">-</span> <span class="text-xs font-normal text-gray-400">dB</span></div>
+            <div class="text-lg font-black text-white my-0.5"><span id="stat-max">-</span> <span class="text-xs font-normal text-gray-400">dB</span></div>
             <div class="text-xs text-gray-500 font-mono" id="stat-max-time">-</div>
           </div>
           
           <!-- 최저 소음 블록 -->
-          <div class="bg-gray-900/90 p-3 rounded-xl border border-gray-800 flex flex-col justify-between gap-1">
+          <div class="bg-gray-900/90 p-2.5 rounded-xl border border-gray-800 flex flex-col justify-between">
             <div class="text-blue-400 font-bold text-xs flex items-center gap-1">🔵 최저 소음</div>
-            <div class="text-xl font-black text-white my-1"><span id="stat-min">-</span> <span class="text-xs font-normal text-gray-400">dB</span></div>
+            <div class="text-lg font-black text-white my-0.5"><span id="stat-min">-</span> <span class="text-xs font-normal text-gray-400">dB</span></div>
             <div class="text-xs text-gray-500 font-mono" id="stat-min-time">-</div>
           </div>
           
           <!-- 평균 소음 블록 -->
-          <div class="col-span-2 bg-emerald-950/30 p-3 rounded-xl border border-emerald-900/40 flex justify-between items-center px-4">
+          <div class="col-span-2 bg-emerald-950/30 p-2.5 rounded-xl border border-emerald-900/40 flex justify-between items-center px-3">
             <div class="text-emerald-400 font-bold text-xs flex items-center gap-1">🟢 구간 평균 소음</div>
-            <div class="text-xl font-black text-emerald-400"><span id="stat-avg">-</span> <span class="text-sm font-normal text-gray-400">dB</span></div>
+            <div class="text-lg font-black text-emerald-400"><span id="stat-avg">-</span> <span class="text-sm font-normal text-gray-400">dB</span></div>
           </div>
         </div>
       `;
 
       recordBtn.disabled = true;
-      recordBtn.className = "flex-1 bg-gray-800 text-gray-600 font-bold py-3 px-4 rounded-xl transition duration-200 cursor-not-allowed text-sm";
+      recordBtn.className = "flex-1 bg-gray-800 text-gray-600 font-bold py-2.5 px-4 rounded-xl transition duration-200 cursor-not-allowed text-sm";
       
       stopBtn.disabled = false;
-      stopBtn.className = "flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-xl transition duration-200 cursor-pointer text-sm active:scale-95";
+      stopBtn.className = "flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 px-4 rounded-xl transition duration-200 cursor-pointer text-sm active:scale-95";
     }
 
     function stopRecording() {
@@ -342,7 +339,6 @@
       
       const avgDb = (totalDbSum / sampleCount).toFixed(1);
 
-      // 최종 통계 모달창 오픈 (모달 내부 스타일도 가독성 높게 확대)
       const resultHtml = `
         <div class="bg-gray-950 p-4 rounded-xl border border-gray-800 space-y-3 font-sans text-sm">
           <div class="flex justify-between text-xs text-gray-400 border-b border-gray-800 pb-2 font-mono">
@@ -378,10 +374,10 @@
 
     function resetRecordButtons() {
       recordBtn.disabled = false;
-      recordBtn.className = "flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-xl transition duration-200 cursor-pointer text-sm active:scale-95";
+      recordBtn.className = "flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 px-4 rounded-xl transition duration-200 cursor-pointer text-sm active:scale-95";
       
       stopBtn.disabled = true;
-      stopBtn.className = "flex-1 bg-gray-800 text-gray-600 font-bold py-3 px-4 rounded-xl transition duration-200 cursor-not-allowed text-sm";
+      stopBtn.className = "flex-1 bg-gray-800 text-gray-600 font-bold py-2.5 px-4 rounded-xl transition duration-200 cursor-not-allowed text-sm";
     }
 
     function stopAudio() {
@@ -393,19 +389,19 @@
       if (geoWatchId) navigator.geolocation.clearWatch(geoWatchId);
 
       startBtn.textContent = '측정 시작';
-      startBtn.className = "w-full bg-emerald-500 hover:bg-emerald-600 text-gray-950 font-extrabold py-3 px-4 rounded-xl transition duration-200 cursor-pointer text-base active:scale-[0.98]";
+      startBtn.className = "w-full bg-emerald-500 hover:bg-emerald-600 text-gray-950 font-extrabold py-2.5 px-4 rounded-xl transition duration-200 cursor-pointer text-base shrink-0 active:scale-[0.98]";
       
       statusText.textContent = '측정이 중지되었습니다.';
       statusText.classList.replace('text-emerald-400', 'text-gray-400');
 
-      recordStatusText.innerHTML = "<div class='text-center text-gray-500 py-6 text-sm'>대기 중... (측정을 시작하면 활성화됩니다.)</div>";
+      recordStatusText.innerHTML = "<div class='text-center text-gray-500 py-4 text-sm'>대기 중... (측정을 시작하면 활성화됩니다.)</div>";
       dbDisplay.innerHTML = `00 <span class="text-sm font-normal text-gray-500">dB</span>`;
       progressBar.style.width = '0%';
 
       recordBtn.disabled = true;
-      recordBtn.className = "flex-1 bg-gray-800 text-gray-600 font-bold py-3 px-4 rounded-xl transition duration-200 cursor-not-allowed text-sm";
+      recordBtn.className = "flex-1 bg-gray-800 text-gray-600 font-bold py-2.5 px-4 rounded-xl transition duration-200 cursor-not-allowed text-sm";
       stopBtn.disabled = true;
-      stopBtn.className = "flex-1 bg-gray-800 text-gray-600 font-bold py-3 px-4 rounded-xl transition duration-200 cursor-not-allowed text-sm";
+      stopBtn.className = "flex-1 bg-gray-800 text-gray-600 font-bold py-2.5 px-4 rounded-xl transition duration-200 cursor-not-allowed text-sm";
     }
 
     document.addEventListener('visibilitychange', async () => {
